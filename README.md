@@ -3,7 +3,7 @@
 ローカルファイルを素早く検索し、Finderで開ける軽量Webアプリ。  
 外部ライブラリ不要 — Python標準ライブラリだけで動作します。
 
-![File Finder](https://github.com/user-attachments/assets/placeholder)
+![File Finder](screenshot.png)
 
 ## ✨ 特徴
 
