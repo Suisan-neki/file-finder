@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Finder - ファイル検索</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f14;
+            --bg-secondary: #1a1a24;
+            --bg-tertiary: #24243a;
+            --bg-card: #1e1e30;
+            --bg-card-hover: #28284a;
+            --accent-primary: #7c5cfc;
+            --accent-secondary: #5b8def;
+            --accent-gradient: linear-gradient(135deg, #7c5cfc, #5b8def);
+            --text-primary: #e8e8f0;
+            --text-secondary: #9898b0;
+            --text-muted: #6868a0;
+            --border-color: #2a2a44;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --shadow-glow: 0 0 30px rgba(124, 92, 252, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(124, 92, 252, 0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(91, 141, 239, 0.04) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-2%, 2%); }
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
+        /* Search */
+        .search-section {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 0;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(15, 15, 20, 0.85);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 0.75rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 1rem 1.25rem 1rem 3rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            opacity: 0.5;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .filter-input {
+            padding: 0.4rem 0.6rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            width: 100px;
+            transition: border-color 0.2s;
+        }
+
+        .filter-input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .filter-select {
+            padding: 0.4rem 0.6rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 0.35rem 0.7rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .chip:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .chip.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .refresh-btn {
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            margin-left: auto;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* Results */
+        .results-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .result-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .result-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(124, 92, 252, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .result-card:active {
+            transform: scale(0.995);
+        }
+
+        .result-icon {
+            font-size: 1.6rem;
+            min-width: 2rem;
+            text-align: center;
+        }
+
+        .result-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .result-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-name mark {
+            background: rgba(124, 92, 252, 0.3);
+            color: var(--text-primary);
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.2rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .result-meta span {
+            white-space: nowrap;
+        }
+
+        .result-action {
+            padding: 0.4rem 0.7rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .result-action:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--success);
+            border-radius: var(--radius);
+            color: var(--success);
+            font-size: 0.85rem;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Keyboard shortcut hint */
+        kbd {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: inherit;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .filter-input {
+                flex: 1;
+            }
+            .result-meta {
+                flex-wrap: wrap;
+                gap: 0.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 File Finder</h1>
+            <p>キーワードですばやくファイルを検索 → Finderで開く</p>
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">読み込み中...</div>
+            </div>
+        </header>
+
+        <div class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="ファイル名を入力… (例: 病理 pdf)" autofocus>
+            </div>
+            <div class="filters">
+                <div class="filter-chips">
+                    <button class="chip" data-ext="pdf">📄 PDF</button>
+                    <button class="chip" data-ext="docx,doc">📝 Word</button>
+                    <button class="chip" data-ext="xlsx,xls">📊 Excel</button>
+                    <button class="chip" data-ext="pptx,ppt">📊 PPT</button>
+                    <button class="chip" data-ext="png,jpg,jpeg,heic">🖼️ 画像</button>
+                    <button class="chip" data-ext="mp4,mov,webm">🎬 動画</button>
+                    <button class="chip" data-ext="zip,dmg">📦 圧縮</button>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">並替:</label>
+                    <select class="filter-select" id="sortSelect">
+                        <option value="relevance">関連度</option>
+                        <option value="date">日付</option>
+                        <option value="name">名前</option>
+                        <option value="size">サイズ</option>
+                    </select>
+                </div>
+                <button class="refresh-btn" id="refreshBtn" title="インデックスを更新">🔄 更新</button>
+            </div>
+        </div>
+
+        <div class="results-info" id="resultsInfo" style="display:none">
+            <span id="resultsCount"></span>
+            <span><kbd>⌘</kbd> + <kbd>K</kbd> で検索にフォーカス</span>
+        </div>
+
+        <div id="resultsContainer">
+            <div class="empty-state" id="emptyState">
+                <div class="emoji">📂</div>
+                <h3>ファイルを検索しましょう</h3>
+                <p>キーワードを入力するか、カテゴリチップをクリック</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsInfo = document.getElementById('resultsInfo');
+        const resultsCount = document.getElementById('resultsCount');
+        const emptyState = document.getElementById('emptyState');
+        const sortSelect = document.getElementById('sortSelect');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statsBar = document.getElementById('statsBar');
+        const toast = document.getElementById('toast');
+
+        let activeExt = '';
+        let debounceTimer = null;
+
+        // Load stats on page load
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                statsBar.innerHTML = `
+                    <div class="stat-item">📁 <span>${data.total_files.toLocaleString()}</span> ファイル</div>
+                    <div class="stat-item">💾 <span>${data.total_size}</span></div>
+                    ${Object.entries(data.by_location).map(([k, v]) =>
+                        `<div class="stat-item">${k}: <span>${v.toLocaleString()}</span></div>`
+                    ).join('')}
+                `;
+            } catch(e) {
+                statsBar.innerHTML = '<div class="stat-item">接続エラー</div>';
+            }
+        }
+
+        // Search with debounce
+        function doSearch() {
+            const query = searchInput.value.trim();
+            const sort = sortSelect.value;
+
+            if (!query && !activeExt) {
+                resultsContainer.innerHTML = emptyState.outerHTML;
+                resultsInfo.style.display = 'none';
+                return;
+            }
+
+            let url = `/api/search?q=${encodeURIComponent(query)}&sort=${sort}`;
+            if (activeExt) url += `&ext=${encodeURIComponent(activeExt)}`;
+
+            resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>検索中...</p></div>';
+            resultsInfo.style.display = 'none';
+
+            fetch(url)
+                .then(r => r.json())
+                .then(data => renderResults(data, query))
+                .catch(err => {
+                    resultsContainer.innerHTML = '<div class="empty-state"><div class="emoji">⚠️</div><h3>検索エラー</h3><p>サーバーに接続できません</p></div>';
+                });
+        }
+
+        function renderResults(data, query) {
+            if (data.results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="emoji">🔍</div>
+                        <h3>見つかりませんでした</h3>
+                        <p>「${escapeHtml(query)}」に一致するファイルはありません</p>
+                    </div>`;
+                resultsInfo.style.display = 'none';
+                return;
+            }
+
+            resultsInfo.style.display = 'flex';
+            resultsCount.textContent = data.total > data.showing
+                ? `${data.total} 件中 ${data.showing} 件を表示`
+                : `${data.total} 件`;
+
+            const html = data.results.map(f => {
+                const highlightedName = query
+                    ? highlightText(f.name, query)
+                    : escapeHtml(f.name);
+
+                return `
+                    <div class="result-card" onclick="openInFinder('${escapeAttr(f.path)}')" title="${escapeAttr(f.path)}">
+                        <div class="result-icon">${f.icon}</div>
+                        <div class="result-info">
+                            <div class="result-name">${highlightedName}</div>
+                            <div class="result-meta">
+                                <span>📂 ${escapeHtml(f.location)}</span>
+                                <span>💾 ${f.size_str}</span>
+                                <span>📅 ${f.modified_str}</span>
+                            </div>
+                        </div>
+                        <button class="result-action" onclick="event.stopPropagation(); openInFinder('${escapeAttr(f.path)}')">
+                            Finderで開く
+                        </button>
+                    </div>`;
+            }).join('');
+
+            resultsContainer.innerHTML = `<div class="results-list">${html}</div>`;
+        }
+
+        function highlightText(text, query) {
+            const escaped = escapeHtml(text);
+            if (!query) return escaped;
+
+            const terms = query.toLowerCase().split(/\s+/);
+            let result = escaped;
+            for (const term of terms) {
+                if (!term) continue;
+                const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
+                result = result.replace(regex, '<mark>$1</mark>');
+            }
+            return result;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        async function openInFinder(path) {
+            try {
+                const res = await fetch(`/api/open?path=${encodeURIComponent(path)}`);
+                const data = await res.json();
+                showToast('✅ Finderで開きました');
+            } catch(e) {
+                showToast('⚠️ エラーが発生しました');
+            }
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(doSearch, 250);
+        });
+
+        sortSelect.addEventListener('change', doSearch);
+
+        // Extension chips
+        document.querySelectorAll('.chip[data-ext]').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const ext = chip.dataset.ext;
+                if (chip.classList.contains('active')) {
+                    chip.classList.remove('active');
+                    activeExt = '';
+                } else {
+                    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    activeExt = ext;
+                }
+                doSearch();
+            });
+        });
+
+        // Refresh button
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.textContent = '⏳ 更新中...';
+            try {
+                const res = await fetch('/api/refresh');
+                const data = await res.json();
+                showToast(`✅ ${data.count} ファイルを再インデックス`);
+                loadStats();
+                doSearch();
+            } catch(e) {
+                showToast('⚠️ 更新に失敗しました');
+            }
+            refreshBtn.textContent = '🔄 更新';
+        });
+
+        // Keyboard shortcut: Cmd+K to focus search
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+            // Escape to clear
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                activeExt = '';
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                doSearch();
+            }
+        });
+
+        // Initialize
+        loadStats();
+    </script>
+</body>
+</html>
